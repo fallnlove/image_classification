@@ -51,13 +51,13 @@ class CustomDataset(Dataset):
         return data
 
     def load_image(self, path):
-        image = read_image(path, mode=ImageReadMode.RGB).float() / 255.0
+        image = read_image(str(path), mode=ImageReadMode.RGB).float() / 255.0
 
         return image
 
     def _get_base(self):
         path = self.dataset_path / self.part
-        labels = pd.read_csv(self.dataset_path / "labels.csv")
+        labels = pd.read_csv(self.dataset_path / "labels.csv", index_col=0)
 
         data = []
 
@@ -66,7 +66,7 @@ class CustomDataset(Dataset):
                 "path": file_path,
             }
             if self.part != "test":
-                info["label"] = labels[file_path.name].item()
+                info["label"] = labels.loc[file_path.name].item()
 
             data.append(info)
 

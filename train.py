@@ -47,7 +47,7 @@ def main(config):
 
     transform_train = transforms.Compose(
         [
-            transforms.RandomSizedCrop(38),
+            transforms.RandomResizedCrop(38),
             transforms.RandomHorizontalFlip(),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)

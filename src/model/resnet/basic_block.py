@@ -11,7 +11,7 @@ class BasicBlock(nn.Module):
             stride (int): stride in convolution.
         """
 
-        super(self, BasicBlock).__init__()
+        super(BasicBlock, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(
                 input_dim,

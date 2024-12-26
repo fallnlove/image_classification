@@ -55,7 +55,7 @@ class Trainer:
         """
         try:
             self._train_process()
-        except:
+        except KeyboardInterrupt as e:
             print("Keyboard interrupt. Saving checkpoint.")
             self._save_checkpoint(-1)
 
@@ -90,15 +90,13 @@ class Trainer:
             self.train_tracker.update("grad_norm", self._get_grad_norm())
 
             if index % 100 == 0:
-                self.writer.log_scalar(
-                    "learning rate", self.lr_scheduler.get_last_lr()[0]
-                )
+                self.writer.log_scalar("learning rate", self.scheduler.get_last_lr()[0])
                 self.writer.log_metrics(self.train_tracker)
                 self._log_batch(batch)
                 self.train_tracker.reset()
 
     @torch.no_grad()
-    def _eval_epoch(self):
+    def _eval_epoch(self, epoch):
         self.is_train = False
         self.train_tracker.reset()
         self.writer.eval()
@@ -149,6 +147,7 @@ class Trainer:
             batch (dict): batch of data
         """
         batch["images"] = batch["images"].to(self.device)
+        batch["labels"] = batch["labels"].to(self.device)
 
         return batch
 

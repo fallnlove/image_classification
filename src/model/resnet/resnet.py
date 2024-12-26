@@ -19,7 +19,9 @@ class ResNet(nn.Module):
             num_classes (int): number of classes in classification.
             hidden_dim (int): hidden dim.
         """
-        super(self, ResNet).__init__()
+        super(ResNet, self).__init__()
+
+        self.hidden_dim = hidden_dim
 
         self.body = nn.Sequential(
             nn.Conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
@@ -33,6 +35,15 @@ class ResNet(nn.Module):
             nn.Dropout(0.1),
             nn.Linear(hidden_dim * 4, num_classes),
         )
+
+    def _make_layer(self, block, hidden_dim, num_blocks, stride):
+        layers = []
+
+        for stride in [stride] + [1] * (num_blocks - 1):
+            layers.append(block(self.hidden_dim, hidden_dim, stride))
+            self.hidden_dim = hidden_dim
+
+        return nn.Sequential(*layers)
 
     def forward(self, images: Tensor, **batch) -> dict[Tensor]:
         """
@@ -49,9 +60,9 @@ class ResNet(nn.Module):
 
 class ResNet20(ResNet):
     def __init__(self, *args, **kwargs):
-        super(self, ResNet20).__init__(BasicBlock, [3, 3, 3], *args, **kwargs)
+        super(ResNet20, self).__init__(BasicBlock, [3, 3, 3], *args, **kwargs)
 
 
 class ResNet110(nn.Module):
     def __init__(self, *args, **kwargs):
-        super(self, ResNet110).__init__(BasicBlock, [18, 18, 18], *args, **kwargs)
+        super(ResNet110, self).__init__(BasicBlock, [18, 18, 18], *args, **kwargs)

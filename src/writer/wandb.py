@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.metrics.tracker import MetricsTracker
+from src.metrics.tracker import MetricTracker
 
 
 class WanDBWriter:
@@ -23,7 +23,7 @@ class WanDBWriter:
         except ImportError:
             raise ImportError("Please install wandb to use this writer")
 
-        self.step = 0
+        self.step_ = 0
         self.mode = ""
 
     def step(self):
@@ -31,7 +31,7 @@ class WanDBWriter:
         Step the writer
         """
 
-        self.step += 1
+        self.step_ += 1
 
     def train(self):
         """
@@ -56,7 +56,7 @@ class WanDBWriter:
             value (float): Value of the scalar
         """
 
-        self.wandb.log({f"{name}_{self.mode}": value}, step=self.step)
+        self.wandb.log({f"{name}_{self.mode}": value}, step=self.step_)
 
     def log_image(self, name: str, image: np.ndarray):
         """
@@ -67,9 +67,11 @@ class WanDBWriter:
             image (np.ndarray): Image to log
         """
 
-        self.wandb.log({f"{name}_{self.mode}": self.wandb.Image(image)}, step=self.step)
+        self.wandb.log(
+            {f"{name}_{self.mode}": self.wandb.Image(image)}, step=self.step_
+        )
 
-    def log_metrics(self, metrics: MetricsTracker):
+    def log_metrics(self, metrics: MetricTracker):
         """
         Log metrics
 

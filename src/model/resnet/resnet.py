@@ -63,6 +63,6 @@ class ResNet20(ResNet):
         super(ResNet20, self).__init__(BasicBlock, [3, 3, 3], *args, **kwargs)
 
 
-class ResNet110(nn.Module):
+class ResNet110(ResNet):
     def __init__(self, *args, **kwargs):
         super(ResNet110, self).__init__(BasicBlock, [18, 18, 18], *args, **kwargs)

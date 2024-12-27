@@ -10,10 +10,13 @@ from src.loss import CrossEntropyLossWrapper
 from src.metrics import Accuracy
 from src.model import ResNet20
 from src.trainer import Trainer
-from src.writer import WanDBWriter
+from src.utils import set_random_seed
+from src.writer import EmptyWriter, WanDBWriter
 
 
 def main(config):
+    set_random_seed(42)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = ResNet20()
@@ -39,7 +42,7 @@ def main(config):
 
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     loss_fn = CrossEntropyLossWrapper().to(device)
-    optimizer = torch.optim.SGD(trainable_params, lr=1e-2, momentum=1e-5)
+    optimizer = torch.optim.SGD(trainable_params, lr=1e-1, momentum=1e-5)
     metrics = [Accuracy()]
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=200 * len(train_loader)
@@ -70,7 +73,9 @@ def main(config):
         scheduler=scheduler,
         metrics=metrics,
         device=device,
-        writer=WanDBWriter(project_name="DL-HW-1"),
+        writer=WanDBWriter(project_name="DL-HW-1")
+        if config["wandb"]
+        else EmptyWriter(),
         dataloaders={
             "train": train_loader,
             "eval": val_loader,
@@ -90,9 +95,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "-path",
         "--path",
-        default=None,
+        default="./",
         type=str,
         help="path to dataset",
+    )
+    parser.add_argument(
+        "-wandb",
+        "--wandb",
+        default=False,
+        type=bool,
+        help="log info to wandb",
     )
     config = parser.parse_args()
     main(vars(config))

@@ -20,6 +20,9 @@ def collate_fn(dataset_items: list[dict]) -> dict[Union[torch.Tensor, list]]:
     result_batch = defaultdict()
 
     result_batch["images"] = torch.stack([item["image"] for item in dataset_items])
+
+    result_batch["file_names"] = [item["file_name"] for item in dataset_items]
+
     if "label" in dataset_items[0].keys():
         result_batch["labels"] = torch.LongTensor(
             [item["label"] for item in dataset_items]

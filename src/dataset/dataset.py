@@ -41,7 +41,10 @@ class CustomDataset(Dataset):
     def __getitem__(self, index):
         info = self.base[index]
 
-        data = {"image": self.load_image(info["path"])}
+        data = {
+            "image": self.load_image(info["path"]),
+            "file_name": info["path"].name,
+        }
         if self.part != "test":
             data["label"] = info["label"]
 

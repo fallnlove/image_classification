@@ -15,7 +15,7 @@ from src.writer import EmptyWriter, WanDBWriter
 
 
 def main(config):
-    set_random_seed(42)
+    set_random_seed(112)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -104,6 +104,7 @@ if __name__ == "__main__":
         "--wandb",
         default=False,
         type=bool,
+        action=argparse.BooleanOptionalAction,
         help="log info to wandb",
     )
     config = parser.parse_args()

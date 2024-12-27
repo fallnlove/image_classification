@@ -41,7 +41,7 @@ class Inferencer:
 
         self.table.sort(key=lambda x: x["Id"])
         preds = pd.DataFrame(self.table, columns=["Id", "Category"])
-        preds.to_csv(str(self.save_path / "sample_submission.csv"), index=False)
+        preds.to_csv(str(self.save_path / "labels_test.csv"), index=False)
 
     @torch.no_grad()
     def _eval_process(self):

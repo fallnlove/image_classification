@@ -39,9 +39,9 @@ class Inferencer:
             print("Keyboard interrupt. Saving checkpoint.")
             self._save_checkpoint(-1)
 
-        self.table.sort(key=lambda x, y: x["Id"] < y["Id"])
+        self.table.sort(key=lambda x: x["Id"])
         preds = pd.DataFrame(self.table, columns=["Id", "Category"])
-        preds.to_csv(str(self.save_path / "sample_submission.csv"))
+        preds.to_csv(str(self.save_path / "sample_submission.csv"), index=False)
 
     @torch.no_grad()
     def _eval_process(self):
@@ -53,10 +53,10 @@ class Inferencer:
         for index, batch in tqdm(
             enumerate(self.dataloaders["test"]), total=len(self.dataloaders["test"])
         ):
-            batch = self._process_batch(batch, self.train_tracker)
+            batch = self._process_batch(batch)
             self._log_batch(batch)
 
-    def _process_batch(self, batch, tracker):
+    def _process_batch(self, batch):
         batch = self._move_to_device(batch)
         batch = self._transform_batch(batch)
 

@@ -27,7 +27,7 @@ def main(config):
         collate_fn=collate_fn,
     )
 
-    transforms = transforms.Compose(
+    transform = transforms.Compose(
         [
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
@@ -42,7 +42,7 @@ def main(config):
             "test": dataloader,
         },
         transforms={
-            "test": transforms,
+            "test": transform,
         },
     )
 

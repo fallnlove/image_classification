@@ -1,4 +1,4 @@
-from torch import nn
+from torch import Tensor, nn
 from torchvision.models import efficientnet_v2_l, efficientnet_v2_m, efficientnet_v2_s
 
 
@@ -14,5 +14,14 @@ class EfficientNetV2(nn.Module):
         else:
             self.model = efficientnet_v2_l(*args, **kwargs)
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, images: Tensor, **batch) -> dict[Tensor]:
+        """
+         Input:
+            images (Tensor): input image (B, input_dim, H, W).
+        Output:
+            predictions (Tensor): predictions (B, num_classes)
+        """
+
+        predictions = self.model(images)
+
+        return {"predictions": predictions}

@@ -47,9 +47,7 @@ def main(config):
     loss_fn = CrossEntropyLossWrapper().to(device)
     optimizer = torch.optim.AdamW(trainable_params, lr=1e-3, weight_decay=0.005)
     metrics = [Accuracy()]
-    scheduler = torch.optim.lr_scheduler.WarmupLR(
-        optimizer, warmup_steps=5 * len(train_loader)
-    )
+    scheduler = WarmupLR(optimizer, warmup_steps=5 * len(train_loader))
 
     transform_train = transforms.Compose(
         [

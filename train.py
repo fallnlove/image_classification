@@ -66,6 +66,7 @@ def main(config):
         [
             transforms.RandomResizedCrop(40),
             transforms.RandomHorizontalFlip(),
+            transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
             ),
@@ -74,6 +75,7 @@ def main(config):
 
     transform_test = transforms.Compose(
         [
+            transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
             ),

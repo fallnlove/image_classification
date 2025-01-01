@@ -2,7 +2,6 @@ import random
 from pathlib import Path
 
 import pandas as pd
-import torch
 from torch.utils.data import Dataset
 from torchvision.io import ImageReadMode, read_image
 from tqdm import tqdm
@@ -51,12 +50,11 @@ class CustomDataset(Dataset):
 
         if self.instance_transforms is not None:
             data["image"] = self.instance_transforms(data["image"])
-        data["image"] = data["image"].float() / 255.0
 
         return data
 
     def load_image(self, path):
-        image = read_image(str(path), mode=ImageReadMode.RGB).to(torch.uint8)
+        image = read_image(str(path), mode=ImageReadMode.RGB).float() / 255.0
 
         return image
 

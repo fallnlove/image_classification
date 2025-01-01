@@ -8,7 +8,8 @@ from src.dataset import CustomDataset
 from src.dataset.collate import collate_fn
 from src.loss import CrossEntropyLossWrapper
 from src.metrics import Accuracy
-from src.model import ResNet20
+from src.model import EfficientNetV2
+from src.scheduler import WarmupLR
 from src.trainer import Trainer
 from src.utils import set_random_seed
 from src.writer import EmptyWriter, WanDBWriter
@@ -19,7 +20,7 @@ def main(config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = ResNet20()
+    model = EfficientNetV2("small", num_classes=200)
     model = model.to(device)
 
     dataset_train = CustomDataset(config["path"], "train")
@@ -27,30 +28,32 @@ def main(config):
 
     train_loader = DataLoader(
         dataset_train,
-        batch_size=256,
+        batch_size=128,
         shuffle=True,
         num_workers=4,
         collate_fn=collate_fn,
     )
     val_loader = DataLoader(
         dataset_val,
-        batch_size=256,
+        batch_size=128,
         shuffle=False,
         num_workers=4,
         collate_fn=collate_fn,
     )
 
+    num_epochs = 600
+
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     loss_fn = CrossEntropyLossWrapper().to(device)
-    optimizer = torch.optim.SGD(trainable_params, lr=1e-1, momentum=1e-5)
+    optimizer = torch.optim.AdamW(trainable_params, lr=1e-3, weight_decay=0.005)
     metrics = [Accuracy()]
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=200 * len(train_loader)
+    scheduler = torch.optim.lr_scheduler.WarmupLR(
+        optimizer, warmup_steps=5 * len(train_loader)
     )
 
     transform_train = transforms.Compose(
         [
-            transforms.RandomResizedCrop(38),
+            transforms.RandomResizedCrop(40),
             transforms.RandomHorizontalFlip(),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
@@ -80,7 +83,7 @@ def main(config):
             "train": train_loader,
             "eval": val_loader,
         },
-        num_epochs=200,
+        num_epochs=num_epochs,
         transforms={
             "train": transform_train,
             "eval": transform_test,

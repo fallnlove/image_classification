@@ -3,8 +3,7 @@ from torchvision.models import wide_resnet50_2
 
 
 class WideResNet(nn.Module):
-    def __init__(self, type, *args, **kwargs):
-        assert type in ["small", "medium", "large"]
+    def __init__(self, *args, **kwargs):
         super(WideResNet, self).__init__()
 
         self.model = wide_resnet50_2(*args, **kwargs)

@@ -4,7 +4,9 @@ from src.metrics.tracker import MetricTracker
 
 
 class WanDBWriter:
-    def __init__(self, project_name: str, run_name: str = None, run_id: str = None):
+    def __init__(
+        self, project_name: str, run_name: str = None, run_id: str = None, **kwargs
+    ):
         """
         Initialize the WanDBWriter
 
@@ -16,7 +18,9 @@ class WanDBWriter:
         try:
             import wandb
 
-            wandb.init(project=project_name, name=run_name, id=run_id, resume="allow")
+            wandb.init(
+                project=project_name, name=run_name, id=run_id, resume="allow", **kwargs
+            )
 
             self.wandb = wandb
 

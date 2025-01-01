@@ -1,12 +1,14 @@
 from torch import Tensor, nn
-from torchvision.models import resnext50_32x4d
+from torchvision.models.resnet import Bottleneck, _resnet
 
 
 class ResNext(nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         super(ResNext, self).__init__()
 
-        self.model = resnext50_32x4d(*args, **kwargs)
+        self.model = _resnet(
+            Bottleneck, [2, 2, 2, 2], None, True, groups=32, width_per_group=8, **kwargs
+        )
 
     def forward(self, images: Tensor, **batch) -> dict[Tensor]:
         """

@@ -8,7 +8,7 @@ from src.dataset import CustomDataset
 from src.dataset.collate import collate_fn
 from src.loss import CrossEntropyLossWrapper
 from src.metrics import Accuracy
-from src.model import EfficientNetV2
+from src.model import WideResNet
 from src.scheduler import WarmupLR
 from src.trainer import Trainer
 from src.utils import set_random_seed
@@ -20,7 +20,7 @@ def main(config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = EfficientNetV2("small", num_classes=200)
+    model = WideResNet(num_classes=200)
     model = model.to(device)
 
     dataset_train = CustomDataset(config["path"], "train")
@@ -41,13 +41,26 @@ def main(config):
         collate_fn=collate_fn,
     )
 
-    num_epochs = 600
+    configs = {
+        "num_epochs": 150,
+        "model": "WideResNet50",
+        "warmup_epochs": 0,
+        "optimizer": "SGD",
+        "scheduler": "CosineAnnealingLR",
+        "lr": 1e-2,
+        "weight_decay": 0.05,
+    }
 
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     loss_fn = CrossEntropyLossWrapper().to(device)
-    optimizer = torch.optim.AdamW(trainable_params, lr=1e-3, weight_decay=0.005)
+    optimizer = torch.optim.SGD(
+        trainable_params, lr=configs["lr"], weight_decay=configs["weight_decay"]
+    )
     metrics = [Accuracy()]
-    scheduler = WarmupLR(optimizer, warmup_steps=5 * len(train_loader))
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=configs["num_epochs"] * len(train_loader),
+    )
 
     transform_train = transforms.Compose(
         [
@@ -74,14 +87,14 @@ def main(config):
         scheduler=scheduler,
         metrics=metrics,
         device=device,
-        writer=WanDBWriter(project_name="DL-HW-1")
+        writer=WanDBWriter(project_name="DL-HW-1", config=configs)
         if config["wandb"]
         else EmptyWriter(),
         dataloaders={
             "train": train_loader,
             "eval": val_loader,
         },
-        num_epochs=num_epochs,
+        num_epochs=configs["num_epochs"],
         transforms={
             "train": transform_train,
             "eval": transform_test,

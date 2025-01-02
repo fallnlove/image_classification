@@ -4,10 +4,17 @@ from torchvision.models.resnet import Bottleneck, _resnet
 
 
 class WideResNet(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, width_per_group: int = 128, **kwargs):
         super(WideResNet, self).__init__()
 
-        self.model = _resnet(Bottleneck, [2, 2, 2, 2], None, True, **kwargs)
+        self.model = _resnet(
+            Bottleneck,
+            [2, 2, 2, 2],
+            None,
+            True,
+            width_per_group=width_per_group,
+            **kwargs
+        )
 
     def forward(self, images: Tensor, **batch) -> dict[Tensor]:
         """

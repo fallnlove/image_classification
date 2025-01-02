@@ -14,7 +14,7 @@ def main(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = ResNet20()
-    model.load_state_dict(torch.load(config["modelpath"], weights_only=True))
+    model.load_state_dict(torch.load(config["modelpath"])["state_dict"])
     model = model.to(device)
 
     dataset = CustomDataset(config["path"], "test")
@@ -29,6 +29,7 @@ def main(config):
 
     transform = transforms.Compose(
         [
+            transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
             ),

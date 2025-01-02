@@ -20,6 +20,7 @@ class Trainer:
         dataloaders: dict,
         num_epochs: int,
         transforms: dict = None,
+        load_checkpoint: str = None,
     ):
         self.is_train = True
 
@@ -34,6 +35,7 @@ class Trainer:
         self.writer = writer
         self.dataloaders = dataloaders
         self.num_epochs = num_epochs
+        self.start_epoch = 0
 
         self.transforms = transforms
 
@@ -48,6 +50,9 @@ class Trainer:
         self.save_path = Path("./models/")
         if not self.save_path.exists():
             self.save_path.mkdir()
+
+        if load_checkpoint is not None:
+            self._resume_checkpoint(load_checkpoint)
 
     def run(self):
         """
@@ -203,4 +208,26 @@ class Trainer:
             epoch (int): epoch number.
         """
         save_path = self.save_path / f"model_{epoch}.pth"
-        torch.save(self.model.state_dict(), save_path)
+
+        state = {
+            "epoch": epoch,
+            "state_dict": self.model.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "scheduler": self.scheduler.state_dict(),
+        }
+
+        torch.save(state, save_path)
+
+    def _resume_checkpoint(self, path: str):
+        """
+        Save model checkpoint.
+        Input:
+            epoch (int): epoch number.
+        """
+
+        checkpoint = torch.load(path, self.device)
+
+        self.start_epoch = checkpoint["epoch"] + 1
+        self.model.load_state_dict(checkpoint["state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer"])
+        self.scheduler.load_state_dict(checkpoint["scheduler"])

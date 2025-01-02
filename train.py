@@ -20,7 +20,7 @@ def main(config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = WideResNet(num_classes=200)
+    model = WideResNet(num_classes=200, width_per_group=256)
     model = model.to(device)
 
     dataset_train = CustomDataset(config["path"], "train")
@@ -42,19 +42,23 @@ def main(config):
     )
 
     configs = {
-        "num_epochs": 150,
-        "model": "WideResNet50",
+        "num_epochs": 400,
+        "model": "WideResNet",
         "warmup_epochs": 0,
         "optimizer": "SGD",
         "scheduler": "CosineAnnealingLR",
-        "lr": 1e-2,
-        "weight_decay": 0.05,
+        "lr": 1e-1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9,
     }
 
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     loss_fn = CrossEntropyLossWrapper().to(device)
     optimizer = torch.optim.SGD(
-        trainable_params, lr=configs["lr"], weight_decay=configs["weight_decay"]
+        trainable_params,
+        lr=configs["lr"],
+        weight_decay=configs["weight_decay"],
+        momentum=configs["momentum"],
     )
     metrics = [Accuracy()]
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

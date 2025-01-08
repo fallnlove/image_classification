@@ -17,7 +17,7 @@ class WideResNet(nn.Module):
         )
 
         self.model.conv1 = nn.Conv2d(
-            3, self.model.inplanes, kernel_size=kernel_size, padding="same", bias=False
+            3, 64, kernel_size=kernel_size, padding="same", bias=False
         )
         self.model.maxpool = nn.Identity()
 

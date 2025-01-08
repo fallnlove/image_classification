@@ -4,7 +4,7 @@ from torchvision.models.resnet import Bottleneck, _resnet
 
 
 class WideResNet(nn.Module):
-    def __init__(self, width_per_group: int = 128, **kwargs):
+    def __init__(self, width_per_group: int = 128, kernel_size: int = 3, **kwargs):
         super(WideResNet, self).__init__()
 
         self.model = _resnet(
@@ -14,6 +14,15 @@ class WideResNet(nn.Module):
             True,
             width_per_group=width_per_group,
             **kwargs
+        )
+
+        self.model.conv1 = nn.Conv2d(
+            3, self.model.inplanes, kernel_size=kernel_size, padding="same", bias=False
+        )
+        self.model.maxpool = nn.Identity()
+
+        nn.init.kaiming_normal_(
+            self.model.conv1.weight, mode="fan_out", nonlinearity="relu"
         )
 
     def forward(self, images: Tensor, **batch) -> dict[Tensor]:

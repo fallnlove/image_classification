@@ -1,49 +1,31 @@
-import torch
 from torch import Tensor, nn
-
-from src.model.resnet.basic_block import BasicBlock
+from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152
 
 
 class ResNet(nn.Module):
-    def __init__(
-        self,
-        block: nn.Module,
-        num_blocks: int,
-        num_classes: int = 200,
-        hidden_dim: int = 16,
-    ):
-        """
-        Input:
-            block (nn.Module): type of block to use in ResNet.
-            num_blocks (int): number of blocks.
-            num_classes (int): number of classes in classification.
-            hidden_dim (int): hidden dim.
-        """
+    def __init__(self, type: str = "resnet18", kernel_size: int = 3, *args, **kwargs):
         super(ResNet, self).__init__()
+        assert type in ["resnet18", "resnet34", "resnet50", "resnet101", "resnet152"]
 
-        self.hidden_dim = hidden_dim
+        if type == "resnet18":
+            self.model = resnet18(*args, **kwargs)
+        elif type == "resnet34":
+            self.model = resnet34(*args, **kwargs)
+        elif type == "resnet50":
+            self.model = resnet50(*args, **kwargs)
+        elif type == "resnet101":
+            self.model = resnet101(*args, **kwargs)
+        elif type == "resnet152":
+            self.model = resnet152(*args, **kwargs)
 
-        self.body = nn.Sequential(
-            nn.Conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(hidden_dim),
-            nn.ReLU(),
-            self._make_layer(block, hidden_dim, num_blocks[0], 1),
-            self._make_layer(block, hidden_dim * 2, num_blocks[1], 2),
-            self._make_layer(block, hidden_dim * 4, num_blocks[2], 2),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
-            nn.Dropout(0.1),
-            nn.Linear(hidden_dim * 4, num_classes),
+        self.model.conv1 = nn.Conv2d(
+            3, self.model.inplanes, kernel_size=kernel_size, padding="same", bias=False
         )
+        self.model.maxpool = nn.Identity()
 
-    def _make_layer(self, block, hidden_dim, num_blocks, stride):
-        layers = []
-
-        for stride in [stride] + [1] * (num_blocks - 1):
-            layers.append(block(self.hidden_dim, hidden_dim, stride))
-            self.hidden_dim = hidden_dim
-
-        return nn.Sequential(*layers)
+        nn.init.kaiming_normal_(
+            self.model.conv1.weight, mode="fan_out", nonlinearity="relu"
+        )
 
     def forward(self, images: Tensor, **batch) -> dict[Tensor]:
         """
@@ -53,16 +35,6 @@ class ResNet(nn.Module):
             predictions (Tensor): predictions (B, num_classes)
         """
 
-        predictions = self.body(images)
+        predictions = self.model(images)
 
         return {"predictions": predictions}
-
-
-class ResNet20(ResNet):
-    def __init__(self, *args, **kwargs):
-        super(ResNet20, self).__init__(BasicBlock, [3, 3, 3], *args, **kwargs)
-
-
-class ResNet110(ResNet):
-    def __init__(self, *args, **kwargs):
-        super(ResNet110, self).__init__(BasicBlock, [18, 18, 18], *args, **kwargs)

@@ -68,8 +68,7 @@ def main(config):
 
     transform_train = transforms.Compose(
         [
-            transforms.RandomResizedCrop(40),
-            transforms.RandomHorizontalFlip(),
+            transforms.TrivialAugmentWide(),
             transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
                 mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)

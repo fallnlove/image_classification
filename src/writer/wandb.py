@@ -5,7 +5,12 @@ from src.metrics.tracker import MetricTracker
 
 class WanDBWriter:
     def __init__(
-        self, project_name: str, run_name: str = None, run_id: str = None, **kwargs
+        self,
+        project_name: str,
+        run_name: str = None,
+        run_id: str = None,
+        start_step: int = 0,
+        **kwargs,
     ):
         """
         Initialize the WanDBWriter
@@ -14,6 +19,7 @@ class WanDBWriter:
             project_name (str): Name of the project
             run_name (str): Name of the run
             run_id (str): ID of the run
+            start_step (int): number of step to start
         """
         try:
             import wandb
@@ -27,7 +33,7 @@ class WanDBWriter:
         except ImportError:
             raise ImportError("Please install wandb to use this writer")
 
-        self.step_ = 0
+        self.step_ = start_step
         self.mode = ""
 
     def step(self):

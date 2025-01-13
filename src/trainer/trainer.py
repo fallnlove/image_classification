@@ -103,7 +103,7 @@ class Trainer:
     @torch.no_grad()
     def _eval_epoch(self, epoch):
         self.is_train = False
-        self.train_tracker.reset()
+        self.eval_tracker.reset()
         self.writer.eval()
         self.model.eval()
 

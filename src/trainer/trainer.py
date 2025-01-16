@@ -21,6 +21,7 @@ class Trainer:
         num_epochs: int,
         transforms: dict = None,
         load_checkpoint: str = None,
+        from_pretrained: str = None,
     ):
         self.is_train = True
 
@@ -53,6 +54,9 @@ class Trainer:
 
         if load_checkpoint is not None:
             self._resume_checkpoint(load_checkpoint)
+
+        if from_pretrained is not None:
+            self._from_pretrained(from_pretrained)
 
     def run(self):
         """
@@ -220,9 +224,9 @@ class Trainer:
 
     def _resume_checkpoint(self, path: str):
         """
-        Save model checkpoint.
+        Loaf model checkpoint.
         Input:
-            epoch (int): epoch number.
+            path (str): path to checkpoint.
         """
 
         checkpoint = torch.load(path, self.device)
@@ -231,3 +235,14 @@ class Trainer:
         self.model.load_state_dict(checkpoint["state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.scheduler.load_state_dict(checkpoint["scheduler"])
+
+    def _from_pretrained(self, path: str):
+        """
+        Load pre-trained model.
+        Input:
+            path (str): path to checkpoint.
+        """
+
+        checkpoint = torch.load(path, self.device)
+
+        self.model.load_state_dict(checkpoint["state_dict"])

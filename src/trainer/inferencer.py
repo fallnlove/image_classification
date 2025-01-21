@@ -15,6 +15,8 @@ class Inferencer:
         device: str,
         dataloaders: dict,
         transforms: dict = None,
+        test_augmentations=None,
+        num_augs: int = 100,
     ):
         self.model = model
 
@@ -22,6 +24,8 @@ class Inferencer:
         self.dataloaders = dataloaders
 
         self.transforms = transforms
+        self.test_augmentations = test_augmentations
+        self.num_augs = num_augs
 
         self.save_path = Path("./submissions/")
         if not self.save_path.exists():
@@ -58,9 +62,20 @@ class Inferencer:
 
     def _process_batch(self, batch):
         batch = self._move_to_device(batch)
-        batch = self._transform_batch(batch)
 
-        output = self.model(**batch)
+        if self.test_augmentations is not None:
+            output = 0
+            for _ in range(self.num_augs):
+                output += (
+                    self.model(
+                        **self._transform_batch(batch, self.test_augmentations)
+                    ).softmax(-1)
+                    / self.num_augs
+                )
+        else:
+            batch = self._transform_batch(batch)
+            output = self.model(**batch)
+
         batch.update(output)
 
         return batch
@@ -78,7 +93,7 @@ class Inferencer:
 
         return batch
 
-    def _transform_batch(self, batch: dict):
+    def _transform_batch(self, batch: dict, transform=None):
         """
         Transform batch of data.
 
@@ -87,10 +102,11 @@ class Inferencer:
         Output:
             batch (dict): batch of data
         """
-        if self.transforms is None:
+        if self.transforms is None and transform is None:
             return batch
 
-        transform = self.transforms["test"]
+        if transform is None:
+            transform = self.transforms["test"]
 
         batch["images"] = transform(batch["images"])
 

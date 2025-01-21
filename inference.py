@@ -36,6 +36,17 @@ def main(config):
         ]
     )
 
+    test_augs = transforms.Compose(
+        [
+            transforms.RandAugment(),
+            transforms.TrivialAugmentWide(),
+            transforms.ConvertImageDtype(torch.float32),
+            transforms.Normalize(
+                mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
+            ),
+        ]
+    )
+
     trainer = Inferencer(
         model=model,
         device=device,
@@ -45,6 +56,7 @@ def main(config):
         transforms={
             "test": transform,
         },
+        test_augmentations=test_augs,
     )
 
     trainer.run()

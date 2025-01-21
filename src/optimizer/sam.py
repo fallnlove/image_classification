@@ -49,10 +49,19 @@ class SAM(Optimizer):
         """
 
         total_norm = 0
-        for p in self.model.parameters():
-            if p.grad is not None:
-                param_norm = p.grad.data.norm(2)
-                total_norm += param_norm.item() ** 2
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is not None:
+                    param_norm = p.grad.data.norm(2)
+                    total_norm += param_norm.item() ** 2
         total_norm = total_norm ** (1.0 / 2)
 
         return total_norm
+
+    def load_state_dict(self, state_dict):
+        """
+        Loads state dict
+        """
+        super(SAM, self).load_state_dict(state_dict)
+
+        self.base_optim.param_groups = self.param_groups

@@ -15,10 +15,6 @@ def main(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = ResNet(type="resnet50", num_classes=200)
-    model.fc = nn.Sequential(
-        nn.Dropout(),
-        nn.Linear(512 * 4, 200),
-    )
     model.load_state_dict(torch.load(config["modelpath"])["state_dict"])
     model = model.to(device)
 

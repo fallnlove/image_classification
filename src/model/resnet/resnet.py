@@ -22,6 +22,10 @@ class ResNet(nn.Module):
             3, 64, kernel_size=kernel_size, padding="same", bias=False
         )
         self.model.maxpool = nn.Identity()
+        self.model.fc = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(512 * 4, 200),
+        )
 
         nn.init.kaiming_normal_(
             self.model.conv1.weight, mode="fan_out", nonlinearity="relu"

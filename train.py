@@ -2,13 +2,14 @@ import argparse
 
 import torch
 import torchvision.transforms as transforms
+from torch import nn
 from torch.utils.data import DataLoader
 
 from src.dataset import CustomDataset
 from src.dataset.collate import collate_fn
 from src.loss import CrossEntropyLossWrapper
 from src.metrics import Accuracy
-from src.model import WideResNet
+from src.model import ResNet, ResNext
 from src.scheduler import WarmupLR
 from src.trainer import Trainer
 from src.utils import set_random_seed
@@ -20,54 +21,60 @@ def main(config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = WideResNet(num_classes=200, width_per_group=256)
+    model = ResNet(type="resnet50", num_classes=200)
     model = model.to(device)
 
     dataset_train = CustomDataset(config["path"], "train")
     dataset_val = CustomDataset(config["path"], "val")
 
+    configs = {
+        "num_epochs_1": config["numepochs1"],
+        "num_epochs_2": config["numepochs2"],
+        "warmup_epochs": config["warmupepochs"],
+        "lr_1": config["lr1"],
+        "lr_2": config["lr2"],
+        "weight_decay": config["weightdecay"],
+        "momentum": config["momentum"],
+        "nesterov": config["nesterov"],
+        "batch_size": config["batchsize"],
+        "model": "ResNet50",
+        "optimizer": "SGD",
+        "scheduler": "CosineAnnealingLR",
+        "augs": "trivial+rand,trivial+rand+augmix",
+    }
+
     train_loader = DataLoader(
         dataset_train,
-        batch_size=128,
+        batch_size=configs["batch_size"],
         shuffle=True,
         num_workers=4,
         collate_fn=collate_fn,
     )
     val_loader = DataLoader(
         dataset_val,
-        batch_size=128,
+        batch_size=configs["batch_size"],
         shuffle=False,
         num_workers=4,
         collate_fn=collate_fn,
     )
 
-    configs = {
-        "num_epochs": 400,
-        "model": "WideResNet",
-        "warmup_epochs": 0,
-        "optimizer": "SGD",
-        "scheduler": "CosineAnnealingLR",
-        "lr": 1e-1,
-        "weight_decay": 0.0001,
-        "momentum": 0.9,
-    }
-
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    loss_fn = CrossEntropyLossWrapper().to(device)
+    loss_fn = CrossEntropyLossWrapper(label_smoothing=0.1).to(device)
     optimizer = torch.optim.SGD(
         trainable_params,
-        lr=configs["lr"],
+        lr=configs["lr_1"],
         weight_decay=configs["weight_decay"],
         momentum=configs["momentum"],
+        nesterov=configs["nesterov"],
     )
     metrics = [Accuracy()]
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=configs["num_epochs"] * len(train_loader),
+    scheduler = WarmupLR(
+        optimizer, warmup_steps=configs["warmup_epochs"] * len(train_loader)
     )
 
     transform_train = transforms.Compose(
         [
+            transforms.RandAugment(),
             transforms.TrivialAugmentWide(),
             transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(
@@ -75,7 +82,6 @@ def main(config):
             ),
         ]
     )
-
     transform_test = transforms.Compose(
         [
             transforms.ConvertImageDtype(torch.float32),
@@ -84,29 +90,71 @@ def main(config):
             ),
         ]
     )
+    writer = WanDBWriter(project_name="DL-HW-1", config=configs)
 
-    trainer = Trainer(
+    first_trainer = Trainer(
         model=model,
         criterion=loss_fn,
         optimizer=optimizer,
         scheduler=scheduler,
         metrics=metrics,
         device=device,
-        writer=WanDBWriter(project_name="DL-HW-1", config=configs)
-        if config["wandb"]
-        else EmptyWriter(),
+        writer=writer,
         dataloaders={
             "train": train_loader,
             "eval": val_loader,
         },
-        num_epochs=configs["num_epochs"],
+        num_epochs=configs["num_epochs_1"],
         transforms={
             "train": transform_train,
             "eval": transform_test,
         },
     )
+    first_trainer.run()
 
-    trainer.run()
+    transform_train = transforms.Compose(
+        [
+            transforms.RandAugment(),
+            transforms.TrivialAugmentWide(),
+            transforms.AugMix(),
+            transforms.ConvertImageDtype(torch.float32),
+            transforms.Normalize(
+                mean=(0.569, 0.545, 0.493), std=(0.2387, 0.2345, 0.251)
+            ),
+        ]
+    )
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    loss_fn = CrossEntropyLossWrapper(label_smoothing=0.1).to(device)
+    optimizer = torch.optim.SGD(
+        trainable_params,
+        lr=configs["lr_2"],
+        weight_decay=configs["weight_decay"],
+        momentum=configs["momentum"],
+        nesterov=configs["nesterov"],
+    )
+    metrics = [Accuracy()]
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=configs["num_epochs_2"] * len(train_loader)
+    )
+    second_trainer = Trainer(
+        model=model,
+        criterion=loss_fn,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        metrics=metrics,
+        device=device,
+        writer=writer,
+        dataloaders={
+            "train": train_loader,
+            "eval": val_loader,
+        },
+        num_epochs=configs["num_epochs_2"],
+        transforms={
+            "train": transform_train,
+            "eval": transform_test,
+        },
+    )
+    second_trainer.run()
 
 
 if __name__ == "__main__":
@@ -125,6 +173,69 @@ if __name__ == "__main__":
         type=bool,
         action=argparse.BooleanOptionalAction,
         help="log info to wandb",
+    )
+    parser.add_argument(
+        "-numepochs1",
+        "--numepochs1",
+        default=51,
+        type=int,
+        help="Number of first training epochs",
+    )
+    parser.add_argument(
+        "-numepochs2",
+        "--numepochs2",
+        default=51,
+        type=int,
+        help="Number of second training epochs",
+    )
+    parser.add_argument(
+        "-warmupepochs",
+        "--warmupepochs",
+        default=5,
+        type=int,
+        help="Number of warmup epochs",
+    )
+    parser.add_argument(
+        "-lr1",
+        "--lr1",
+        default=1e-1,
+        type=float,
+        help="Learning rate for first training",
+    )
+    parser.add_argument(
+        "-lr2",
+        "--lr2",
+        default=1e-1,
+        type=float,
+        help="Learning rate for second training",
+    )
+    parser.add_argument(
+        "-weightdecay",
+        "--weightdecay",
+        default=1e-4,
+        type=float,
+        help="Weight decay for SGD",
+    )
+    parser.add_argument(
+        "-momentum",
+        "--momentum",
+        default=0.9,
+        type=float,
+        help="Momentum for SGD",
+    )
+    parser.add_argument(
+        "-nesterov",
+        "--nesterov",
+        default=True,
+        type=bool,
+        help="Enable nesterov option to SGD",
+    )
+    parser.add_argument(
+        "-batchsize",
+        "--batchsize",
+        default=1024,
+        type=int,
+        help="Batch size",
     )
     config = parser.parse_args()
     main(vars(config))

@@ -67,11 +67,10 @@ class Inferencer:
             output = 0
             for _ in range(self.num_augs):
                 output += (
-                    self.model(
-                        **self._transform_batch(batch, self.test_augmentations)
-                    ).softmax(-1)
+                    self.model(**self._transform_test(batch))["predictions"].softmax(-1)
                     / self.num_augs
                 )
+            output = {"predictions": output}
         else:
             batch = self._transform_batch(batch)
             output = self.model(**batch)
@@ -93,7 +92,7 @@ class Inferencer:
 
         return batch
 
-    def _transform_batch(self, batch: dict, transform=None):
+    def _transform_test(self, batch: dict):
         """
         Transform batch of data.
 
@@ -102,11 +101,26 @@ class Inferencer:
         Output:
             batch (dict): batch of data
         """
-        if self.transforms is None and transform is None:
+        if self.test_augmentations is None:
             return batch
 
-        if transform is None:
-            transform = self.transforms["test"]
+        transform = self.test_augmentations
+
+        return {"images": transform(batch["images"])}
+
+    def _transform_batch(self, batch: dict):
+        """
+        Transform batch of data.
+
+        Input:
+            batch (dict): batch of data
+        Output:
+            batch (dict): batch of data
+        """
+        if self.transforms is None:
+            return batch
+
+        transform = self.transforms["test"]
 
         batch["images"] = transform(batch["images"])
 

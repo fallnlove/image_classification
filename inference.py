@@ -2,18 +2,23 @@ import argparse
 
 import torch
 import torchvision.transforms as transforms
+from torch import nn
 from torch.utils.data import DataLoader
 
 from src.dataset import CustomDataset
 from src.dataset.collate import collate_fn
-from src.model import ResNet20
+from src.model import ResNet
 from src.trainer import Inferencer
 
 
 def main(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = ResNet20()
+    model = ResNet(type="resnet50", num_classes=200)
+    model.fc = nn.Sequential(
+        nn.Dropout(),
+        nn.Linear(512 * 4, 200),
+    )
     model.load_state_dict(torch.load(config["modelpath"])["state_dict"])
     model = model.to(device)
 
@@ -35,7 +40,6 @@ def main(config):
             ),
         ]
     )
-
     test_augs = transforms.Compose(
         [
             transforms.RandAugment(),
@@ -67,14 +71,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-path",
         "--path",
-        default="./",
+        default="/kaggle/input/dl-bhw-1/bhw1",
         type=str,
         help="path to dataset",
     )
     parser.add_argument(
         "-modelpath",
         "--modelpath",
-        default="models/model_195.pth",
+        default="/kaggle/working/aboba.pth",
         type=str,
         help="path to pretrained model",
     )

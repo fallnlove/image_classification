@@ -135,6 +135,16 @@ class Trainer:
         if self.is_train:
             batch["loss"].backward()
             self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            output = self.model(**batch)
+            batch.update(output)
+            loss = self.criterion(**batch)
+            batch.update(loss)
+
+            batch["loss"].backward()
+            self.optimizer.step()
+
             self.writer.step()
             if self.scheduler is not None:
                 self.scheduler.step()

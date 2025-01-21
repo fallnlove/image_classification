@@ -10,6 +10,7 @@ from src.dataset.collate import collate_fn
 from src.loss import CrossEntropyLossWrapper
 from src.metrics import Accuracy
 from src.model import ResNet, ResNext
+from src.optimizer import SAM
 from src.scheduler import WarmupLR
 from src.trainer import Trainer
 from src.utils import set_random_seed
@@ -38,7 +39,7 @@ def main(config):
         "nesterov": config["nesterov"],
         "batch_size": config["batchsize"],
         "model": "ResNet50",
-        "optimizer": "SGD",
+        "optimizer": "SAM(SGD)",
         "scheduler": "CosineAnnealingLR",
         "augs": "trivial+rand,trivial+rand+augmix",
     }
@@ -57,11 +58,13 @@ def main(config):
         num_workers=4,
         collate_fn=collate_fn,
     )
+    writer = WanDBWriter(project_name="DL-HW-1", config=configs)
 
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     loss_fn = CrossEntropyLossWrapper(label_smoothing=0.1).to(device)
-    optimizer = torch.optim.SGD(
+    optimizer = SAM(
         trainable_params,
+        torch.optim.SGD,
         lr=configs["lr_1"],
         weight_decay=configs["weight_decay"],
         momentum=configs["momentum"],
@@ -90,8 +93,6 @@ def main(config):
             ),
         ]
     )
-    writer = WanDBWriter(project_name="DL-HW-1", config=configs)
-
     first_trainer = Trainer(
         model=model,
         criterion=loss_fn,
@@ -123,8 +124,6 @@ def main(config):
             ),
         ]
     )
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    loss_fn = CrossEntropyLossWrapper(label_smoothing=0.1).to(device)
     optimizer = torch.optim.SGD(
         trainable_params,
         lr=configs["lr_2"],
@@ -132,7 +131,6 @@ def main(config):
         momentum=configs["momentum"],
         nesterov=configs["nesterov"],
     )
-    metrics = [Accuracy()]
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=configs["num_epochs_2"] * len(train_loader)
     )

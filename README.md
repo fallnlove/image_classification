@@ -2,6 +2,12 @@
 
 ## Training model
 
+To split the dataset into train and validation parts, run the command:
+
+```bash
+python src/scripts/make_dataset.py --path PATH_TO_DATASET
+```
+
 To start the training and inference process, run the command:
 
 ```bash

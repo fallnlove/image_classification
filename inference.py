@@ -67,14 +67,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-path",
         "--path",
-        default="/kaggle/input/dl-bhw-1/bhw1",
+        default="./bhw1",
         type=str,
         help="path to dataset",
     )
     parser.add_argument(
         "-modelpath",
         "--modelpath",
-        default="/kaggle/working/aboba.pth",
+        default="./models/best_model.pth",
         type=str,
         help="path to pretrained model",
     )

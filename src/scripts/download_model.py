@@ -3,7 +3,7 @@ from pathlib import Path
 import gdown
 
 URLS = {
-    "https://drive.google.com/uc?id=1e5Lx_Qnqls1e8nTsxZNFmPq-PqE8AvR3": "models/model_195.pth",
+    "https://drive.google.com/uc?id=1CwpLhdwnzQkSGcqB5-VEjeC_xIM_lvW-": "models/best_model.pth",
 }
 
 

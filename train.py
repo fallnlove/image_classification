@@ -124,9 +124,11 @@ def main(config):
             ),
         ]
     )
-    optimizer = torch.optim.SGD(
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = SAM(
         trainable_params,
-        lr=configs["lr_2"],
+        torch.optim.SGD,
+        lr=configs["lr_1"],
         weight_decay=configs["weight_decay"],
         momentum=configs["momentum"],
         nesterov=configs["nesterov"],
@@ -160,7 +162,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-path",
         "--path",
-        default="./",
+        default="./bhw1",
         type=str,
         help="path to dataset",
     )

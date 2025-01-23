@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-path",
         "--path",
-        default="./",
+        default="./bhw1",
         type=str,
         help="path to dataset",
     )
